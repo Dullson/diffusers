@@ -149,7 +149,10 @@ def parse_args():
         "--lr_warmup_steps", type=int, default=500, help="Number of steps for the warmup in the lr scheduler."
     )
     parser.add_argument(
-        "--use_8bit_adam", action="store_true", help="Whether or not to use 8-bit Adam from bitsandbytes."
+        "--use_8bit_adam", action="store_false", help="Whether or not to use 8-bit Adam from bitsandbytes."
+    )
+    parser.add_argument(
+        "--use_deepspeed_adam", action="store_false", help="Whether or not to use Adam optimizer from deepspeed."
     )
     parser.add_argument("--adam_beta1", type=float, default=0.9, help="The beta1 parameter for the Adam optimizer.")
     parser.add_argument("--adam_beta2", type=float, default=0.999, help="The beta2 parameter for the Adam optimizer.")
@@ -403,6 +406,14 @@ def main():
             )
 
         optimizer_class = bnb.optim.AdamW8bit
+    elif args.use_deepspeed_adam:
+        try:
+            import deepspeed
+        except ImportError:
+            raise ImportError(
+                "To use Deepspeed Adam, please install the deepspeed library: `pip install deepspeed`."
+            )
+        optimizer_class = deepspeed.ops.adam.DeepSpeedCPUAdam
     else:
         optimizer_class = torch.optim.AdamW
 
